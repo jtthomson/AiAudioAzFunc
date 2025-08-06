@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System.Net;
 using System.Net.Http;
@@ -15,10 +16,12 @@ namespace AiAudioAzureFunc
     public class ProxyFunction
     {
         private readonly HttpClient _client;
+        private string _apiKey;
 
-        public ProxyFunction(IHttpClientFactory httpClientFactory)
+        public ProxyFunction(IHttpClientFactory httpClientFactory, IConfiguration config)
         {
             _client = httpClientFactory.CreateClient();
+            _apiKey = config["OpenAI:ApiKey"];
         }
 
         [Function("ProxyFunction")]
@@ -26,6 +29,7 @@ namespace AiAudioAzureFunc
             [HttpTrigger(AuthorizationLevel.Anonymous, "post")] HttpRequestData req,
             FunctionContext executionContext)
         {
+
             // OPTIONAL: Validate JWT or App Attest
             var isValid = ValidateJwt(req);
             if (!isValid)
@@ -38,7 +42,7 @@ namespace AiAudioAzureFunc
             // Parse and relay request
             var content = await req.ReadAsStringAsync();
             var externalRequest = new StringContent(content, Encoding.UTF8, "application/json");
-            _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "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");
+            _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _apiKey);
 
             var result = await _client.PostAsync("https://api.openai.com/v1/chat/completions", externalRequest);
 
