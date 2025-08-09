@@ -33,7 +33,7 @@ jobs:
         shell: pwsh
         run: |
           pushd './${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}'
-          dotnet build --configuration Release --output ./output
+          dotnet build --configuration Release --output ./bin/output
           popd
       
       - name: Login to Azure
@@ -49,8 +49,9 @@ jobs:
         with:
           app-name: './${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}'
           slot-name: 'Production'
-          package: '${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}/output'
+          package: '${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}/bin/output'
 
           
+
 
 
