@@ -24,8 +24,7 @@ namespace AiAudioAzureFunc
 
         public ProxyFunction(IHttpClientFactory httpClientFactory, IConfiguration config)
         {
-            _apiKey = config["OpenAI:ApiKey"];
-            _azureFunctionUrl = config["AzureFunction:URL"];
+            _apiKey = config["OpenAIApiKey"];
         }
 
         [Function("ProxyFunction")]
