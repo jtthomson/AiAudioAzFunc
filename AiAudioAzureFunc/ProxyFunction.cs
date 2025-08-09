@@ -1,66 +1,90 @@
 using Microsoft.AspNetCore.DataProtection.KeyManagement;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using RestSharp;
+using System.Reflection.PortableExecutable;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
+using static System.Collections.Specialized.BitVector32;
 
 namespace AiAudioAzureFunc
 {
     public class ProxyFunction
     {
-        private readonly HttpClient _client;
+
         private string _apiKey;
         private string _azureFunctionUrl;
 
         public ProxyFunction(IHttpClientFactory httpClientFactory, IConfiguration config)
         {
-            _client = httpClientFactory.CreateClient();
             _apiKey = config["OpenAI:ApiKey"];
             _azureFunctionUrl = config["AzureFunction:URL"];
         }
 
         [Function("ProxyFunction")]
-        public async Task<HttpResponseData> Run(
-            [HttpTrigger(AuthorizationLevel.Anonymous, "post")] HttpRequestData req,
+        public async Task<IActionResult> Run(
+            [HttpTrigger(AuthorizationLevel.Anonymous, "post")] HttpRequest req,
             FunctionContext executionContext)
         {
+            if (!req.ContentType.StartsWith("multipart/form-data"))
+            {
+               return new BadRequestObjectResult("Expected multipart/form-data");
+            }
 
             // OPTIONAL: Validate JWT or App Attest
             var isValid = ValidateJwt(req);
             if (!isValid)
             {
-                var unauthorized = req.CreateResponse(HttpStatusCode.Unauthorized);
-                await unauthorized.WriteStringAsync("Unauthorized");
-                return unauthorized;
+                //var unauthorized = req.CreateResponse(HttpStatusCode.Unauthorized);
+                //await unauthorized.WriteStringAsync("Unauthorized");
+                //return unauthorized;
             }
 
-            // Parse and relay request
-            var content = await req.ReadAsStringAsync();
-            var externalRequest = new StringContent(content, Encoding.UTF8, "application/json");
-            _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _apiKey);
+            var contentType = Microsoft.Net.Http.Headers.MediaTypeHeaderValue.Parse(req.ContentType);
+            var boundary = Microsoft.Net.Http.Headers.HeaderUtilities.RemoveQuotes(contentType.Boundary).Value;
+            var reader = new MultipartReader(boundary, req.Body);
+            MultipartSection section;
+            while ((section = await reader.ReadNextSectionAsync()) != null)
+            {
+                var contentDisposition = ContentDispositionHeaderValue.Parse(section.ContentDisposition);
+                if (contentDisposition.DispositionType == "form-data" &&
+                    contentDisposition.Name.Trim('"') == "file")
+                {
+                    using var client = new HttpClient();
+                    client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _apiKey);
 
-            //var result = await _client.PostAsync("https://api.openai.com/v1/chat/completions", externalRequest);
-            var result = await _client.PostAsync(_azureFunctionUrl, externalRequest);
+                    var multipartContent = new MultipartFormDataContent();
+                    var streamContent = new StreamContent(section.Body);
+                    streamContent.Headers.ContentType = new MediaTypeHeaderValue(section.ContentType ?? "application/octet-stream");
+                    multipartContent.Add(streamContent, "file", contentDisposition.FileName.Trim('"'));
 
-            var response = req.CreateResponse(result.StatusCode);
-            var responseBody = await result.Content.ReadAsStringAsync();
-            await response.WriteStringAsync(responseBody);
+                    // Add other required form fields if needed, e.g. model parameter
+                    multipartContent.Add(new StringContent("whisper-1"), "model");
 
-            return response;
+                    var response = await client.PostAsync("https://api.openai.com/v1/audio/translations", multipartContent);
+
+                    var responseContent = await response.Content.ReadAsStringAsync();
+                    return new OkObjectResult(responseContent);
+                }
+            }
+
+            return new BadRequestObjectResult("File not found");
         }
 
-        private bool ValidateJwt(HttpRequestData req)
+        private bool ValidateJwt(HttpRequest req)
         {
             // Implement JWT or App Attest token validation here
             return true; // Stub
         }
+
+
     }
     //public class ProxyFunction
     //{
