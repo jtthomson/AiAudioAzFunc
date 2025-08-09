@@ -17,11 +17,13 @@ namespace AiAudioAzureFunc
     {
         private readonly HttpClient _client;
         private string _apiKey;
+        private string _azureFunctionUrl;
 
         public ProxyFunction(IHttpClientFactory httpClientFactory, IConfiguration config)
         {
             _client = httpClientFactory.CreateClient();
             _apiKey = config["OpenAI:ApiKey"];
+            _azureFunctionUrl = config["AzureFunction:URL"];
         }
 
         [Function("ProxyFunction")]
@@ -44,7 +46,8 @@ namespace AiAudioAzureFunc
             var externalRequest = new StringContent(content, Encoding.UTF8, "application/json");
             _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _apiKey);
 
-            var result = await _client.PostAsync("https://api.openai.com/v1/chat/completions", externalRequest);
+            //var result = await _client.PostAsync("https://api.openai.com/v1/chat/completions", externalRequest);
+            var result = await _client.PostAsync(_azureFunctionUrl, externalRequest);
 
             var response = req.CreateResponse(result.StatusCode);
             var responseBody = await result.Content.ReadAsStringAsync();
