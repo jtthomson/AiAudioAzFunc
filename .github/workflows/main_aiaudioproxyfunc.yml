@@ -47,9 +47,10 @@ jobs:
         uses: Azure/functions-action@v1
         id: fa
         with:
-          app-name: 'AiAudioProxyFunc'
+          app-name: './${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}'
           slot-name: 'Production'
           package: '${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}/output'
 
           
+
 
