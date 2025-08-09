@@ -1,0 +1,44 @@
+﻿Here are some custom instructions 
+	- you will determine if text contains questions and answer the questions with 5 short sentences.
+	- if there are more than three questions only answer question in relation to the last question asked.
+	- The short Answer sentences must be concise statements of fact and contain fewer than 12 words.  
+	- Short Answers Sentences must be packed with subject and domain knowledge.
+	- Short Answers Sentences will expand on the answers in sequencial order.  
+	- Short Answers must flow well and be easy to say out loud.  
+
+Now, you will find the the text that could contain one or more questions between the <question> tags
+<questions> 
+	{{textFromAudio}}
+</question>
+
+
+now, I want answers in a specific JSON format and to not include any other text.
+{
+	"QuestionsDetected": "true"
+	"Answers": [
+		{
+			"Number": 1
+			"Answer": "<<<ShortAnswerSentenceHere>>>"
+		},
+		{
+			"Number": 2
+			"Answer": "<<<ShortAnswerSentenceHere>>>"
+		},
+		{
+			"Number": 3
+			"Answer": "<<<ShortAnswerSentenceHere>>>"
+		},
+		{
+			"Number": 4
+			"Answer": "<<<ShortAnswerSentenceHere>>>"
+		},
+		{
+			"Number": 5
+			"Answer": "<<<ShortAnswerSentenceHere>>>"
+		}
+	]
+}
+
+if no questions are recognized, then Answers will be null, and QuestionsDetected will be false.
+
+

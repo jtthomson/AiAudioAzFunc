@@ -6,12 +6,13 @@ using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using RestSharp;
 using System.Net.Http;
 using System.Net.Http.Headers;
-using RestSharp;
 using System.Reflection.PortableExecutable;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
+using System.Text.Json;
 using static System.Collections.Specialized.BitVector32;
 
 namespace AiAudioAzureFunc
@@ -20,11 +21,15 @@ namespace AiAudioAzureFunc
     {
 
         private string _apiKey;
-        private string _azureFunctionUrl;
+        private string _instructionsFileName;
+        private string _model;
+
 
         public ProxyFunction(IHttpClientFactory httpClientFactory, IConfiguration config)
         {
             _apiKey = config["OpenAIApiKey"];
+            _instructionsFileName = config["instructionsFileName"];
+            _model = config["OpenAIAnsweringModel"];
         }
 
         [Function("ProxyFunction")]
@@ -34,7 +39,7 @@ namespace AiAudioAzureFunc
         {
             if (!req.ContentType.StartsWith("multipart/form-data"))
             {
-               return new BadRequestObjectResult("Expected multipart/form-data");
+                return new BadRequestObjectResult("Expected multipart/form-data");
             }
 
             // OPTIONAL: Validate JWT or App Attest
@@ -49,6 +54,7 @@ namespace AiAudioAzureFunc
             var contentType = Microsoft.Net.Http.Headers.MediaTypeHeaderValue.Parse(req.ContentType);
             var boundary = Microsoft.Net.Http.Headers.HeaderUtilities.RemoveQuotes(contentType.Boundary).Value;
             var reader = new MultipartReader(boundary, req.Body);
+            string? audioAsTextContent = null;
             MultipartSection section;
             while ((section = await reader.ReadNextSectionAsync()) != null)
             {
@@ -69,12 +75,39 @@ namespace AiAudioAzureFunc
 
                     var response = await client.PostAsync("https://api.openai.com/v1/audio/translations", multipartContent);
 
-                    var responseContent = await response.Content.ReadAsStringAsync();
-                    return new OkObjectResult(responseContent);
+                    audioAsTextContent = await response.Content.ReadAsStringAsync();
+
                 }
             }
 
-            return new BadRequestObjectResult("File not found");
+
+            string template = await File.ReadAllTextAsync(@$"./{_instructionsFileName}");
+            string prompt = template.Replace("{{QUESTION}}", audioAsTextContent);
+            var requestPayload = new
+            {
+                model = _model, // Or gpt-4-turbo if preferred
+                messages = new[]
+               {
+            new {
+                role = "user",
+                content = prompt
+            }
+            },
+                max_tokens = 3000
+            };
+
+            string jsonString = JsonSerializer.Serialize(requestPayload);
+            var request = new HttpRequestMessage(HttpMethod.Post, "https://api.openai.com/v1/chat/completions")
+            {
+                Content = new StringContent(jsonString, System.Text.Encoding.UTF8, "application/json")
+            };
+            HttpClient httpClient = new HttpClient();
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _apiKey);
+            httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("dotnet-client/1.0");
+
+            var fiveAnswerResponse = await httpClient.SendAsync(request);
+
+            return new OkObjectResult(fiveAnswerResponse);
         }
 
         private bool ValidateJwt(HttpRequest req)
