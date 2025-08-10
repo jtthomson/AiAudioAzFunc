@@ -1,3 +1,4 @@
+using Azure;
 using Microsoft.AspNetCore.DataProtection.KeyManagement;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -82,7 +83,7 @@ namespace AiAudioAzureFunc
 
 
             string template = await File.ReadAllTextAsync(@$"./{_instructionsFileName}");
-            string prompt = template.Replace("{{QUESTION}}", audioAsTextContent);
+            string prompt = template.Replace("{{textFromAudio}}", audioAsTextContent);
             var requestPayload = new
             {
                 model = _model, // Or gpt-4-turbo if preferred
@@ -106,8 +107,16 @@ namespace AiAudioAzureFunc
             httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("dotnet-client/1.0");
 
             var fiveAnswerResponse = await httpClient.SendAsync(request);
+            using var responseStream = await fiveAnswerResponse.Content.ReadAsStreamAsync();
+            using var doc = await JsonDocument.ParseAsync(responseStream);
 
-            return new OkObjectResult(fiveAnswerResponse);
+            string responsetext = doc.RootElement
+                      .GetProperty("choices")[0]
+                      .GetProperty("message")
+                      .GetProperty("content")
+                      .GetString() ?? string.Empty;
+
+            return new OkObjectResult(responsetext);
         }
 
         private bool ValidateJwt(HttpRequest req)
