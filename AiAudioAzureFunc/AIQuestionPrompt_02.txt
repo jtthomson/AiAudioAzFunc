@@ -1,0 +1,52 @@
+﻿Here are some custom instructions 
+	- you will determine if text contains questions and answer the questions with 5 short sentences.
+	- each short question answer sentence will also have a corresponding sentence starting with for example. 
+	- if there are more than three questions only answer question in relation to the last question asked.
+	- The short Answer sentences must be concise statements of fact and contain fewer than 12 words.  
+	- The for example sentences must be concise examples, contain fewer than 20 words and start with "for example""
+	- Short Answers Sentences must be packed with subject and domain knowledge.
+	- Short Answers Sentences will expand on the answers in sequencial order. 
+	- for example sentences will relate to the answer with an example or additional details.
+	- Short Answers and for example sentences must flow well and be easy to say out loud.  
+
+Now, you will find the the text that could contain one or more questions between the <question> tags
+<questions> 
+	{{textFromAudio}}
+</question>
+Restate the questions in the response.
+
+now, I want answers in a specific JSON format and to not include any other text.
+{
+	"QuestionsDetected": "<<<RestatedQuestion>>",
+	"Answers": [
+		{
+			"Number": 1,
+			"Answer": "<<<ShortAnswerSentenceHere>>>",
+			"ForExample": "<<<ForExampleSentenceHere>>>"
+		},
+		{
+			"Number": 2,
+			"Answer": "<<<ShortAnswerSentenceHere>>>",
+			"ForExample": "<<<ForExampleSentenceHere>>>"
+		},
+		{
+			"Number": 3,
+			"Answer": "<<<ShortAnswerSentenceHere>>>",
+			"ForExample": "<<<ForExampleSentenceHere>>>"
+		},
+		{
+			"Number": 4,
+			"Answer": "<<<ShortAnswerSentenceHere>>>",
+			"ForExample": "<<<ForExampleSentenceHere>>>"
+		},
+		{
+			"Number": 5,
+			"Answer": "<<<ShortAnswerSentenceHere>>>",
+			"ForExample": "<<<ForExampleSentenceHere>>>"
+		}
+	]
+}
+
+if no questions are recognized, then Answers will be null, and QuestionsDetected will be false.
+
+

@@ -18,6 +18,9 @@
     <PackageReference Include="RestSharp" Version="112.1.0" />
   </ItemGroup>
   <ItemGroup>
+    <None Update="AIQuestionPrompt_02.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="AIQuestionPrompt_01.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
