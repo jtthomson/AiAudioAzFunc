@@ -38,6 +38,7 @@ namespace AiAudioAzureFunc
             [HttpTrigger(AuthorizationLevel.Anonymous, "post")] HttpRequest req,
             FunctionContext executionContext)
         {
+
             if (!req.ContentType.StartsWith("multipart/form-data"))
             {
                 return new BadRequestObjectResult("Expected multipart/form-data");
