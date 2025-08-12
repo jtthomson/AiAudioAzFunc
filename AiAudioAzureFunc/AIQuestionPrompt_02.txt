@@ -2,14 +2,14 @@
 	- you will determine if text contains questions and answer the questions with 5 short sentences.
 	- each short question answer sentence will also have a corresponding sentence starting with for example. 
 	- if there are more than three questions only answer question in relation to the last question asked.
-	- The short Answer sentences must be concise statements of fact and contain fewer than 12 words.  
-	- The for example sentences must be concise examples, contain fewer than 20 words and start with "for example""
+	- The short Answer sentences must be concise statements of fact and contain fewer than 20 words.  
+	- The for example sentences must be concise examples, contain fewer than 30 words and start with "for example""
 	- Short Answers Sentences must be packed with subject and domain knowledge.
 	- Short Answers Sentences will expand on the answers in sequencial order. 
 	- for example sentences will relate to the answer with an example or additional details.
 	- Short Answers and for example sentences must flow well and be easy to say out loud.  
 
-Now, you will find the the text that could contain one or more questions between the <question> tags
+Now, you will find the the text that could contain one or more Software Development questions between the <question> tags
 <questions> 
 	{{textFromAudio}}
 </question>
