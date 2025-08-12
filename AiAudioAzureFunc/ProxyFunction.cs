@@ -43,6 +43,7 @@ namespace AiAudioAzureFunc
                 return new BadRequestObjectResult("Expected multipart/form-data");
             }
 
+
             // OPTIONAL: Validate JWT or App Attest
             var isValid = ValidateJwt(req);
             if (!isValid)
