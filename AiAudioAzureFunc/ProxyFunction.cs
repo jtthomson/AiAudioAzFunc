@@ -70,7 +70,7 @@ namespace AiAudioAzureFunc
                 if (contentDisposition.DispositionType == "form-data" &&
                     contentDisposition.Name.Trim('"') == "file")
                 {
-                    var stopwatch = Stopwatch.StartNew();
+                    var translationsstopwatch = Stopwatch.StartNew();
                     _logger.LogInformation("translations started at {time}", DateTime.UtcNow);
 
                     using var client = new HttpClient();
@@ -87,8 +87,8 @@ namespace AiAudioAzureFunc
                     var response = await client.PostAsync("https://api.openai.com/v1/audio/translations", multipartContent);
 
                     audioAsTextContent = await response.Content.ReadAsStringAsync();
-                    stopwatch.Stop();
-                    _logger.LogInformation("translations completed in {elapsed} ms", stopwatch.ElapsedMilliseconds);
+                    translationsstopwatch.Stop();
+                    _logger.LogInformation("translations completed in {elapsed} ms", translationsstopwatch.ElapsedMilliseconds);
                     
 
                 }
