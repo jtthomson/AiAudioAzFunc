@@ -8,6 +8,7 @@ using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using RestSharp;
+using System.Diagnostics;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Reflection.PortableExecutable;
@@ -15,23 +16,25 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Text.Json;
 using static System.Collections.Specialized.BitVector32;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 //Application Insights Logging TODO..  
 namespace AiAudioAzureFunc
 {
     public class ProxyFunction
     {
-
+        private readonly ILogger<ProxyFunction> _logger;
         private string _apiKey;
         private string _instructionsFileName;
         private string _model;
 
 
-        public ProxyFunction(IHttpClientFactory httpClientFactory, IConfiguration config)
+        public ProxyFunction(IHttpClientFactory httpClientFactory, IConfiguration config, ILogger<ProxyFunction> logger)
         {
             _apiKey = config["OpenAIApiKey"];
             _instructionsFileName = config["instructionsFileName"];
             _model = config["OpenAIAnsweringModel"];
+            _logger = logger;
         }
 
         [Function("ProxyFunction")]
@@ -39,13 +42,14 @@ namespace AiAudioAzureFunc
             [HttpTrigger(AuthorizationLevel.Anonymous, "post")] HttpRequest req,
             FunctionContext executionContext)
         {
-
+            _logger.LogInformation("Entered");
             if (!req.ContentType.StartsWith("multipart/form-data"))
             {
+                _logger.LogError("Expected multipart/form-data");
                 return new BadRequestObjectResult("Expected multipart/form-data");
             }
 
-
+            _logger.LogInformation("Validate JWT");
             // OPTIONAL: Validate JWT or App Attest
             var isValid = ValidateJwt(req);
             if (!isValid)
@@ -66,6 +70,9 @@ namespace AiAudioAzureFunc
                 if (contentDisposition.DispositionType == "form-data" &&
                     contentDisposition.Name.Trim('"') == "file")
                 {
+                    var stopwatch = Stopwatch.StartNew();
+                    _logger.LogInformation("translations started at {time}", DateTime.UtcNow);
+
                     using var client = new HttpClient();
                     client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _apiKey);
 
@@ -80,6 +87,9 @@ namespace AiAudioAzureFunc
                     var response = await client.PostAsync("https://api.openai.com/v1/audio/translations", multipartContent);
 
                     audioAsTextContent = await response.Content.ReadAsStringAsync();
+                    stopwatch.Stop();
+                    _logger.LogInformation("translations completed in {elapsed} ms", stopwatch.ElapsedMilliseconds);
+                    
 
                 }
             }
@@ -99,7 +109,8 @@ namespace AiAudioAzureFunc
             },
                 max_tokens = 3000
             };
-
+            var stopwatch = Stopwatch.StartNew();
+            _logger.LogInformation("completions started at {time}", DateTime.UtcNow);
             string jsonString = JsonSerializer.Serialize(requestPayload);
             var request = new HttpRequestMessage(HttpMethod.Post, "https://api.openai.com/v1/chat/completions")
             {
@@ -112,13 +123,15 @@ namespace AiAudioAzureFunc
             var fiveAnswerResponse = await httpClient.SendAsync(request);
             using var responseStream = await fiveAnswerResponse.Content.ReadAsStreamAsync();
             using var doc = await JsonDocument.ParseAsync(responseStream);
+            stopwatch.Stop();
+            _logger.LogInformation("completions completed in {elapsed} ms", stopwatch.ElapsedMilliseconds);
 
             string responsetext = doc.RootElement
                       .GetProperty("choices")[0]
                       .GetProperty("message")
                       .GetProperty("content")
                       .GetString() ?? string.Empty;
-
+            _logger.LogInformation(responsetext);
             return new OkObjectResult(responsetext);
         }
 

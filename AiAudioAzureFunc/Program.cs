@@ -14,12 +14,22 @@
 
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Azure.Functions.Worker;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.ApplicationInsights;
 
 var host = new HostBuilder()
      .ConfigureFunctionsWebApplication()
     .ConfigureServices(services =>
     {
         services.AddHttpClient(); // Registers IHttpClientFactory
+    })
+    .ConfigureLogging((context, logging) =>
+    {
+        logging.AddApplicationInsights(
+            configureTelemetryConfiguration: (config) => { },
+            configureApplicationInsightsLoggerOptions: (options) => { }
+        );
     })
     .Build();
 
