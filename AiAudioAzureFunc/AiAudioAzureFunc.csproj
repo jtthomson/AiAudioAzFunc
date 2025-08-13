@@ -7,6 +7,14 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
+    <None Remove="AIQuestionPrompt_02.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="AIQuestionPrompt_02.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
     <!-- Application Insights isn't enabled by default. See https://aka.ms/AAt8mw4. -->
     <!-- <PackageReference Include="Microsoft.ApplicationInsights.WorkerService" Version="2.22.0" /> -->
@@ -18,9 +26,6 @@
     <PackageReference Include="RestSharp" Version="112.1.0" />
   </ItemGroup>
   <ItemGroup>
-    <None Update="AIQuestionPrompt_02.txt">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
     <None Update="AIQuestionPrompt_01.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
