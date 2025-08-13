@@ -16,6 +16,7 @@ using System.Text;
 using System.Text.Json;
 using static System.Collections.Specialized.BitVector32;
 
+//Application Insights Logging TODO..  
 namespace AiAudioAzureFunc
 {
     public class ProxyFunction
