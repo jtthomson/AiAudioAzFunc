@@ -7,9 +7,10 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
-    <None Remove="AIQuestionPrompt_02.txt" />
-  </ItemGroup>
-  <ItemGroup>
+    <!-- Always include these files in output -->
+    <Content Include="AIQuestionPrompt_01.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Content Include="AIQuestionPrompt_02.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
