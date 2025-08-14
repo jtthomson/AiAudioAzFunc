@@ -95,7 +95,12 @@ namespace AiAudioAzureFunc
             }
 
 
-            string template = await File.ReadAllTextAsync(@$"./{_instructionsFileName}");
+            var rootPath = Environment.GetEnvironmentVariable("AzureWebJobsScriptRoot")  // Local debug
+               ?? Path.Combine(Environment.GetEnvironmentVariable("HOME")!, "site", "wwwroot"); // Azure
+
+            var filePath = Path.Combine(rootPath, _instructionsFileName);
+
+            string template = await File.ReadAllTextAsync(filePath);
             string prompt = template.Replace("{{textFromAudio}}", audioAsTextContent);
             var requestPayload = new
             {
