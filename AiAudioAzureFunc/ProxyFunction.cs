@@ -38,7 +38,8 @@ namespace AiAudioAzureFunc
         public async Task<HttpResponseData> Run(
             [HttpTrigger(AuthorizationLevel.Anonymous, "post")] HttpRequestData req)
         {
-            
+            var totalStopwatch = new Stopwatch();
+            totalStopwatch.Start();
             _logger.LogInformation("******* Proxy Function Entered *********");
             _logger.LogInformation("Validate JWT");
             // OPTIONAL: Validate JWT or App Attest
@@ -86,6 +87,8 @@ namespace AiAudioAzureFunc
             var response = req.CreateResponse(HttpStatusCode.OK);
             response.Headers.Add("Content-Type", "audio/mpeg");
             await response.Body.WriteAsync(ttsResponse.Value);
+            totalStopwatch.Stop();
+            _logger.LogInformation($"Total Seconds to respond: {Math.Round(totalStopwatch.Elapsed.TotalSeconds, 1)}");
             return response;
         }
 
