@@ -71,7 +71,7 @@ namespace AiAudioAzureFunc
             var chatResponse = _client.GetChatClient("gpt-4o").CompleteChat(chatMessages.ToArray());
             string reply = chatResponse.Value.Content[0].Text;
 
-            var ttsResponse = _client.GetAudioClient("gpt-4o-mini-tts").GenerateSpeech(reply, OpenAI.Audio.GeneratedSpeechVoice.Alloy);
+            var ttsResponse = _client.GetAudioClient("gpt-4o-mini-tts").GenerateSpeech(reply, OpenAI.Audio.GeneratedSpeechVoice.Echo);
             var response = req.CreateResponse(HttpStatusCode.OK);
             response.Headers.Add("Content-Type", "audio/mpeg");
             await response.Body.WriteAsync(ttsResponse.Value);
