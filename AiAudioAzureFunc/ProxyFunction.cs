@@ -56,7 +56,8 @@ namespace AiAudioAzureFunc
                 chatMessages.Add(new SystemChatMessage("the text may contain a question as part of a technical interview."));
                 chatMessages.Add(new SystemChatMessage("answer as though you are subject matter expert and the person being interviewed."));
                 chatMessages.Add(new SystemChatMessage("Only answer the last question."));
-                chatMessages.Add(new SystemChatMessage("Keep your response short and less than 15 words"));
+                chatMessages.Add(new SystemChatMessage("Keep your response short and easy to say with fewer than 16 words"));
+                chatMessages.Add(new SystemChatMessage("use a rhythm structure for syllables in the response with the metrical index 8.7.8.7"));
                 chatMessages.Add(new SystemChatMessage("If no question is asked, response should be expert information about the subject identified"));
                 chatMessages.Add(new SystemChatMessage("Speak rapidly"));
                 chatMessages.Add(new UserChatMessage((string)transcription.Value.Text));
