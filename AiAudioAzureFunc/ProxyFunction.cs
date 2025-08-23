@@ -1,3 +1,4 @@
+using Azure;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
@@ -5,6 +6,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Identity.Client;
 using OpenAI;
+using OpenAI.Audio;
 using OpenAI.Chat;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -55,16 +57,26 @@ namespace AiAudioAzureFunc
             {
                 var transcriptionStopwatch = new Stopwatch();
                 transcriptionStopwatch.Start();
-                var transcription = await _client.GetAudioClient("gpt-4o-mini-transcribe").TranscribeAudioAsync(req.Body, "fromUnity.wav");
+                var stt = _client.GetAudioClient("gpt-4o-mini-transcribe").TranscribeAudioAsync(req.Body, "fromUnity.wav")
+                var transcription = await stt;
                 transcriptionStopwatch.Stop();
+                string userText = transcription.Value.Text;
                 _logger.LogInformation($"Seconds to transcribe: {Math.Round(transcriptionStopwatch.Elapsed.TotalSeconds, 1)}");
-                chatMessages.Add(new SystemChatMessage("the text may contain a question as part of a technical interview."));
-                chatMessages.Add(new SystemChatMessage("answer as though you are subject matter expert and the person being interviewed."));
-                chatMessages.Add(new SystemChatMessage("Only answer the last question."));
-                chatMessages.Add(new SystemChatMessage("Keep your response short and easy to speak with fewer than 16 words"));
-                chatMessages.Add(new SystemChatMessage("If no question is asked, response should be expert information about the subject identified"));
-                chatMessages.Add(new SystemChatMessage("Speak rapidly"));
-                chatMessages.Add(new UserChatMessage((string)transcription.Value.Text));
+                //chatMessages.Add(new SystemChatMessage("the text may contain a question as part of a technical interview."));
+                //chatMessages.Add(new SystemChatMessage("answer as though you are subject matter expert and the person being interviewed."));
+                //chatMessages.Add(new SystemChatMessage("Only answer the last question."));
+                //chatMessages.Add(new SystemChatMessage("Keep your response short and easy to speak with fewer than 16 words"));
+                //chatMessages.Add(new SystemChatMessage("If no question is asked, response should be expert information about the subject identified"));
+                //chatMessages.Add(new SystemChatMessage("Speak rapidly"));
+                chatMessages = new List<ChatMessage>
+                {
+                    new SystemChatMessage(
+                        "You are an expert interviewee. Answer only the last technical question. " +
+                        "Respond in <16 words, easy to speak, rapid style. " +
+                        "If no question, give expert info on the identified subject."
+                    ),
+                    new UserChatMessage(userText)
+                };
             }
             catch (Exception e)
             {
@@ -74,14 +86,14 @@ namespace AiAudioAzureFunc
 
             var chatStropwatch = new Stopwatch();
             chatStropwatch.Start();
-            var chatResponse = _client.GetChatClient("gpt-4o").CompleteChat(chatMessages.ToArray());
+            var chatResponse = await _client.GetChatClient("gpt-4o-mini").CompleteChatAsync(chatMessages.ToArray());
             chatStropwatch.Stop();
             _logger.LogInformation($"Seconds to Chat Complete: {Math.Round(chatStropwatch.Elapsed.TotalSeconds, 1)}");
             string reply = chatResponse.Value.Content[0].Text;
 
             var ttsStropwatch = new Stopwatch();
             ttsStropwatch.Start();
-            var ttsResponse = _client.GetAudioClient("gpt-4o-mini-tts").GenerateSpeech(reply, OpenAI.Audio.GeneratedSpeechVoice.Echo);
+            var ttsResponse = await _client.GetAudioClient("gpt-4o-mini-tts").GenerateSpeechAsync(reply, OpenAI.Audio.GeneratedSpeechVoice.Echo);
             ttsStropwatch.Stop();
             _logger.LogInformation($"Seconds for TTS: {Math.Round(ttsStropwatch.Elapsed.TotalSeconds, 1)}");
             var response = req.CreateResponse(HttpStatusCode.OK);
