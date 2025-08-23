@@ -39,7 +39,7 @@ namespace AiAudioAzureFunc
             [HttpTrigger(AuthorizationLevel.Anonymous, "post")] HttpRequestData req)
         {
             
-            _logger.LogInformation("Entered");
+            _logger.LogInformation("******* Proxy Function Entered *********");
             _logger.LogInformation("Validate JWT");
             // OPTIONAL: Validate JWT or App Attest
             var isValid = ValidateJwt(req);
@@ -52,7 +52,11 @@ namespace AiAudioAzureFunc
             List<ChatMessage> chatMessages = new List<ChatMessage>();
             try
             {
+                var transcriptionStopwatch = new Stopwatch();
+                transcriptionStopwatch.Start();
                 var transcription = await _client.GetAudioClient("gpt-4o-mini-transcribe").TranscribeAudioAsync(req.Body, "fromUnity.wav");
+                transcriptionStopwatch.Stop();
+                _logger.LogInformation($"Seconds to transcribe: {Math.Round(transcriptionStopwatch.Elapsed.TotalSeconds, 1)}");
                 chatMessages.Add(new SystemChatMessage("the text may contain a question as part of a technical interview."));
                 chatMessages.Add(new SystemChatMessage("answer as though you are subject matter expert and the person being interviewed."));
                 chatMessages.Add(new SystemChatMessage("Only answer the last question."));
@@ -67,11 +71,18 @@ namespace AiAudioAzureFunc
                 throw;
             }
 
-            
+            var chatStropwatch = new Stopwatch();
+            chatStropwatch.Start();
             var chatResponse = _client.GetChatClient("gpt-4o").CompleteChat(chatMessages.ToArray());
+            chatStropwatch.Stop();
+            _logger.LogInformation($"Seconds to Chat Complete: {Math.Round(chatStropwatch.Elapsed.TotalSeconds, 1)}");
             string reply = chatResponse.Value.Content[0].Text;
 
+            var ttsStropwatch = new Stopwatch();
+            ttsStropwatch.Start();
             var ttsResponse = _client.GetAudioClient("gpt-4o-mini-tts").GenerateSpeech(reply, OpenAI.Audio.GeneratedSpeechVoice.Echo);
+            ttsStropwatch.Stop();
+            _logger.LogInformation($"Seconds for TTS: {Math.Round(ttsStropwatch.Elapsed.TotalSeconds, 1)}");
             var response = req.CreateResponse(HttpStatusCode.OK);
             response.Headers.Add("Content-Type", "audio/mpeg");
             await response.Body.WriteAsync(ttsResponse.Value);
