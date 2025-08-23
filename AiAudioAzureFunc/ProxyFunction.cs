@@ -57,7 +57,7 @@ namespace AiAudioAzureFunc
             {
                 var transcriptionStopwatch = new Stopwatch();
                 transcriptionStopwatch.Start();
-                var stt = _client.GetAudioClient("gpt-4o-mini-transcribe").TranscribeAudioAsync(req.Body, "fromUnity.wav")
+                var stt = _client.GetAudioClient("gpt-4o-mini-transcribe").TranscribeAudioAsync(req.Body, "fromUnity.wav");
                 var transcription = await stt;
                 transcriptionStopwatch.Stop();
                 string userText = transcription.Value.Text;
