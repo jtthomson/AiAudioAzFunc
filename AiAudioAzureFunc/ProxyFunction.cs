@@ -89,6 +89,7 @@ namespace AiAudioAzureFunc
             extractQuestionStropwatch.Stop();
             _logger.LogInformation($"Seconds to Extract the Question: {Math.Round(extractQuestionStropwatch.Elapsed.TotalSeconds, 1)}");
             string questionRestated = ExtractQuestionResponse.Value.Content[0].Text;
+            _logger.LogInformation($"Question Restated: {questionRestated}");
 
             getAnswerMessages = new List<ChatMessage>
                 {
@@ -105,7 +106,7 @@ namespace AiAudioAzureFunc
             chatStropwatch.Stop();
             _logger.LogInformation($"Seconds to Get Answer: {Math.Round(chatStropwatch.Elapsed.TotalSeconds, 1)}");
             string answer = chatResponse.Value.Content[0].Text;
-
+            _logger.LogInformation($"Answer: {answer}");
             var ttsStropwatch = new Stopwatch();
             ttsStropwatch.Start();
             var ttsResponse = await _client.GetAudioClient("gpt-4o-mini-tts").GenerateSpeechAsync(answer, OpenAI.Audio.GeneratedSpeechVoice.Echo);
