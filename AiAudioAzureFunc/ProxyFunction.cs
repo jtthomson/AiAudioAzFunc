@@ -95,7 +95,7 @@ namespace AiAudioAzureFunc
                 {
                     new SystemChatMessage(
                         "You are an expert interviewee. " +
-                        "Respond in <16 words, easy to speak, rapid style. "
+                        "Respond in <16 words, easy to speak, rapid style. lead with how it is useful."
                     ),
                     new UserChatMessage(questionRestated)
                 };
