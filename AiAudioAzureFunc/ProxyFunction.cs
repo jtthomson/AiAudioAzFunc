@@ -1,4 +1,5 @@
 using Azure;
+using Confluent.Kafka;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
@@ -18,8 +19,13 @@ using static System.Runtime.InteropServices.JavaScript.JSType;
 //Application Insights Logging TODO..  
 namespace AiAudioAzureFunc
 {
+
+
     public class ProxyFunction
     {
+
+
+
         private readonly ILogger<ProxyFunction> _logger;
         private string _apiKey;
         private string _instructionsFileName;
@@ -40,6 +46,62 @@ namespace AiAudioAzureFunc
         public async Task<HttpResponseData> Run(
             [HttpTrigger(AuthorizationLevel.Anonymous, "post")] HttpRequestData req)
         {
+            /*
+             Kafka Setup: 
+            # Required connection configs for Kafka producer, consumer, and admin
+                    bootstrap.servers=pkc-619z3.us-east1.gcp.confluent.cloud:9092
+                    security.protocol=SASL_SSL
+                    sasl.mechanisms=PLAIN
+                    sasl.username=644ZT4QLWP5ROGZR
+                    sasl.password=cfltgG/3b0Ktr1WssmjWI3zGOCJgcXroKtaAjoKQlK/RrGfE4SQhQ05SZTrZ361Q
+
+                    # Best practice for higher availability in librdkafka clients prior to 1.7
+                    session.timeout.ms=45000
+
+                    client.id=ccloud-csharp-client-3338e328-3928-4f99-a6b9-23bace6bf16e
+
+             */
+            //IConfiguration config = readConfig();
+            //const string topic = "topic_0";
+
+            //produce(topic, config);
+
+
+            var bootstrapServers = Environment.GetEnvironmentVariable("BootstrapServers");
+            var username = Environment.GetEnvironmentVariable("KafkaUsername");
+            var password = Environment.GetEnvironmentVariable("KafkaPassword");
+            var topic = Environment.GetEnvironmentVariable("KafkaTopic");
+
+            var config = new ProducerConfig
+            {
+                BootstrapServers = bootstrapServers,
+                SecurityProtocol = SecurityProtocol.SaslSsl,
+                SaslMechanism = SaslMechanism.Plain,
+                SaslUsername = username,
+                SaslPassword = password
+            };
+
+            using var producer = new ProducerBuilder<Null, string>(config).Build();
+
+            try
+            {
+                var deliveryResult = await producer.ProduceAsync(topic, new Message<Null, string>
+                {
+                    Value = "Hello, World!"
+                });
+
+                
+            }
+            catch (ProduceException<Null, string> e)
+            {
+                _logger.LogInformation("Error: " + e.Message);
+                //return new BadRequestObjectResult($"Error producing message: {e.Error.Reason}");
+            }
+
+
+
+
+
             var totalStopwatch = new Stopwatch();
             totalStopwatch.Start();
             _logger.LogInformation("******* Proxy Function Entered *********");
@@ -123,6 +185,41 @@ namespace AiAudioAzureFunc
             return response;
         }
 
+        public static void produce(string topic, IConfiguration config)
+        {
+            // creates a new producer instance
+            using (var producer = new ProducerBuilder<string, string>(config.AsEnumerable()).Build())
+            {
+                // produces a sample message to the user-created topic and prints
+                // a message when successful or an error occurs
+                producer.Produce(topic, new Message<string, string> { Key = "key", Value = "value" },
+                  (deliveryReport) => {
+                      if (deliveryReport.Error.Code != ErrorCode.NoError)
+                      {
+                          Console.WriteLine($"Failed to deliver message: {deliveryReport.Error.Reason}");
+                      }
+                      else
+                      {
+                          Console.WriteLine($"Produced event to topic {topic}: key = {deliveryReport.Message.Key,-10} value = {deliveryReport.Message.Value}");
+                      }
+                  }
+                );
+
+                // send any outstanding or buffered messages to the Kafka broker
+                producer.Flush(TimeSpan.FromSeconds(10));
+            }
+        }
+
+        public static IConfiguration readConfig()
+        {
+            // reads the client configuration from client.properties
+            // and returns it as a configuration object
+            return new ConfigurationBuilder()
+            .SetBasePath(Directory.GetCurrentDirectory())
+            .AddIniFile("client.properties", false)
+            .Build();
+        }
+
         private bool ValidateJwt(HttpRequestData req)
         {
             _logger.LogInformation("JWT Not Implemented");
@@ -132,6 +229,8 @@ namespace AiAudioAzureFunc
 
 
     }
+
+
 
 }
 
@@ -218,3 +317,5 @@ namespace AiAudioAzureFunc
 //          .GetString() ?? string.Empty;
 //_logger.LogInformation(responsetext);
 //return new OkObjectResult(responsetext);
+
+
