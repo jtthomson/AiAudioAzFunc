@@ -15,7 +15,8 @@ using System.Net.Http.Headers;
 using System.Text.Json;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
-//Application Insights Logging TODO..  
+//Application Insights Logging TODO..
+//redeploy
 namespace AiAudioAzureFunc
 {
     public class ProxyFunction
